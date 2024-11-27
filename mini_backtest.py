@@ -45,8 +45,13 @@ for i, (start, end) in enumerate(date_ranges):
     stocks = pd.concat([datas["Adj Close"]])
     # stocks.index = pd.to_datetime(stocks.index)
     returns = stocks.pct_change().dropna()
-    weighted_returns = (returns * weights[i]).sum(axis=1)
+
+    #weighted_returns = (returns * weights[i]).sum(axis=1) if daily rebalanced
+    cumulative_values = (1 + returns).cumprod()
+    portfolio_value = cumulative_values.dot(weights[i])
+    weighted_returns = portfolio_value.pct_change().fillna(0)
     portfolio_returns.append(weighted_returns)
+
     portfolio_perf = np.prod(1+weighted_returns)-1
     portfolio_perf_per_period.append(portfolio_perf)
     # Récupérer les rendements du benchmark
