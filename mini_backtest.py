@@ -48,7 +48,7 @@ for i, (start, end) in enumerate(date_ranges):
     st.write((1 + returns).cumprod())
 
     #weighted_returns = (returns * weights[i]).sum(axis=1) if daily rebalanced
-    cumulative_values = (1 + returns).cumprod()
+    cumulative_values = (1 + returns).cumprod() - 1
     portfolio_value = cumulative_values.dot(weights[i])
     weighted_returns = portfolio_value.pct_change().fillna(0)
     portfolio_returns.append(weighted_returns)
