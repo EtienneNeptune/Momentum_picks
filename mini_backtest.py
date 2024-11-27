@@ -42,7 +42,7 @@ for i, (start, end) in enumerate(date_ranges):
         continue
     # Récupérer les données pour les tickers et calculer les rendements pondérés
     datas = fetch_data(tickers[i], start, end)
-    stocks = pd.concat([datas["Close"]])
+    stocks = pd.concat([datas["Adj Close"]])
     # stocks.index = pd.to_datetime(stocks.index)
     returns = stocks.pct_change().dropna()
     #weighted_returns = (returns * weights[i]).sum(axis=1) if daily rebalanced
