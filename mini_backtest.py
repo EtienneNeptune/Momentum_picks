@@ -47,9 +47,6 @@ for i, (start, end) in enumerate(date_ranges):
     # stocks.index = pd.to_datetime(stocks.index)
     returns = stocks.pct_change().dropna()
     returns_test = stocks_test.pct_change().dropna()
-    st.write((1 + returns).cumprod()-1)
-    st.write((1 + returns_test).cumprod()-1)
-
 
     #weighted_returns = (returns * weights[i]).sum(axis=1) if daily rebalanced
     cumulative_values = (1 + returns).cumprod()
@@ -65,6 +62,8 @@ for i, (start, end) in enumerate(date_ranges):
     sp500_perf = np.prod(1 + sp500_data) - 1
     bench_perf_per_period.append(sp500_perf[0])
 
+st.write((1 + returns).cumprod()-1)
+st.write((1 + returns_test).cumprod()-1)
 # Consolidation des rendements
 portfolio = pd.concat(portfolio_returns).sort_index()
 benchmark = pd.concat(sp500_returns).sort_index()
