@@ -42,12 +42,9 @@ for i, (start, end) in enumerate(date_ranges):
         continue
     # Récupérer les données pour les tickers et calculer les rendements pondérés
     datas = fetch_data(tickers[i], start, end)
-    stocks = pd.concat([datas["Adj Close"]])
-    stocks_test = pd.concat([datas["Close"]])
+    stocks = pd.concat([datas["Close"]])
     # stocks.index = pd.to_datetime(stocks.index)
     returns = stocks.pct_change().dropna()
-    returns_test = stocks_test.pct_change().dropna()
-
     #weighted_returns = (returns * weights[i]).sum(axis=1) if daily rebalanced
     cumulative_values = (1 + returns).cumprod()
     portfolio_value = cumulative_values.dot(weights[i])
@@ -62,8 +59,7 @@ for i, (start, end) in enumerate(date_ranges):
     sp500_perf = np.prod(1 + sp500_data) - 1
     bench_perf_per_period.append(sp500_perf[0])
 
-st.write((1 + returns).cumprod()-1)
-st.write((1 + returns_test).cumprod()-1)
+
 # Consolidation des rendements
 portfolio = pd.concat(portfolio_returns).sort_index()
 benchmark = pd.concat(sp500_returns).sort_index()
