@@ -45,6 +45,7 @@ for i, (start, end) in enumerate(date_ranges):
     stocks = pd.concat([datas["Adj Close"]])
     # stocks.index = pd.to_datetime(stocks.index)
     returns = stocks.pct_change().dropna()
+    st.write((1 + returns).cumprod())
 
     #weighted_returns = (returns * weights[i]).sum(axis=1) if daily rebalanced
     cumulative_values = (1 + returns).cumprod()
