@@ -47,16 +47,21 @@ for i, (start, end) in enumerate(date_ranges):
     returns = stocks.pct_change().dropna()
     #weighted_returns = (returns * weights[i]).sum(axis=1) if daily rebalanced
     cumulative_values = (1 + returns).cumprod()
+    st.write(cumulative_values)
+
     portfolio_value = cumulative_values.dot(weights[i])
     weighted_returns = portfolio_value.pct_change().fillna(0)
     portfolio_returns.append(weighted_returns)
-    st.write(cumulative_values)
+
     portfolio_perf = np.prod(1+weighted_returns)-1
     portfolio_perf_per_period.append(portfolio_perf)
+
+    st.write(portfolio_perf)
     # Récupérer les rendements du benchmark
     sp500_data = fetch_data("^GSPC", start, end)["Adj Close"].pct_change().dropna()
     sp500_returns.append(sp500_data)
     sp500_perf = np.prod(1 + sp500_data) - 1
+    st.write(sp500_perf)
     bench_perf_per_period.append(sp500_perf[0])
 
 
