@@ -78,22 +78,32 @@ st.sidebar.header("Analyse des résultats")
 mean_return = portfolio.mean() * 252
 volatility = portfolio.std() * np.sqrt(252)
 
+bench_mean_return = benchmark.mean() * 252
+bench_volatility = benchmark.std() * np.sqrt(252)
+
 # Ratio de Sharpe
 sharpe_ratio = mean_return / volatility
+bench_sharpe_ratio = bench_mean_return / bench_volatility
 
 # VaR (95 %) historical method
 var_95 = np.percentile(portfolio, 5)
+bench_var_95 = np.percentile(benchmark, 5)
 
 # daily VaR (95 %) using parametric method
 z_score = norm.ppf(0.05)
 daily_parametric_VaR = (portfolio.mean() + z_score * portfolio.std())
+bench_daily_parametric_VaR = (benchmark.mean() + z_score * benchmark.std())
 
 # monthly VaR (95 %) using parametric method
 monthly_parametric_VaR = (portfolio.mean() + z_score * (portfolio.std()*np.sqrt(20)))
+bench_monthly_parametric_VaR = (benchmark.mean() + z_score * (benchmark.std()*np.sqrt(20)))
 
 # Drawdown maximal
 drawdown = portfolio_cum / portfolio_cum.cummax() - 1
 max_drawdown = drawdown.min()
+
+bench_drawdown = benchmark_cum / benchmark_cum.cummax() - 1
+bench_max_drawdown = bench_drawdown.min()
 
 # Bêta (covariance / variance benchmark)
 covariance = pd.concat([portfolio,benchmark],axis=1).cov().dropna()
@@ -101,7 +111,7 @@ benchmark_variance = benchmark.var()
 beta = covariance.iloc[0,1] / benchmark_variance[0]
 
 # Affichage des résultats
-st.subheader("Analyse des résultats")
+st.subheader("Analyse des résultats du portefeuille")
 st.write(f"Rendement annuel moyen : {mean_return:.2%}")
 st.write(f"Volatilité annuelle : {volatility:.2%}")
 st.write(f"Ratio de Sharpe : {sharpe_ratio:.2f}")
@@ -110,6 +120,17 @@ st.write(f"DAILY Value at Risk (95 %), parametric: {daily_parametric_VaR:.2%}")
 st.write(f"MONTHLY Value at Risk (95 %), parametric: {monthly_parametric_VaR:.2%}")
 st.write(f"Drawdown maximal : {max_drawdown:.2%}")
 st.write(f"Bêta : {beta:.2f}")
+
+st.subheader("Analyse des résultats du benchmark")
+st.write(f"Rendement annuel moyen : {bench_mean_return:.2%}")
+st.write(f"Volatilité annuelle : {bench_volatility:.2%}")
+st.write(f"Ratio de Sharpe : {bench_sharpe_ratio:.2f}")
+st.write(f"DAILY Value at Risk (95 %), historical : {bench_var_95:.2%}")
+st.write(f"DAILY Value at Risk (95 %), parametric: {bench_daily_parametric_VaR:.2%}")
+st.write(f"MONTHLY Value at Risk (95 %), parametric: {bench_monthly_parametric_VaR:.2%}")
+st.write(f"Drawdown maximal : {bench_max_drawdown:.2%}")
+st.write(f"Bêta : "+str(1))
+
 
 # Graphique performance cumulée
 st.subheader("Performance du Portefeuille vs S&P500")
