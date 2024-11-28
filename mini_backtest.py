@@ -42,12 +42,12 @@ for i, (start, end) in enumerate(date_ranges):
         continue
     # Récupérer les données pour les tickers et calculer les rendements pondérés
     datas = fetch_data(tickers[i], start, end)
-    stocks = pd.concat([datas["Close"]])
+    stocks = pd.concat([datas["Adj Close"]])
     # stocks.index = pd.to_datetime(stocks.index)
     returns = stocks.pct_change().dropna()
     #weighted_returns = (returns * weights[i]).sum(axis=1) if daily rebalanced
     cumulative_values = (1 + returns).cumprod()
-    st.write(cumulative_values)
+    st.write((1-cumulative_values)*100)
 
     portfolio_value = cumulative_values.dot(weights[i])
     weighted_returns = portfolio_value.pct_change().fillna((portfolio_value.iloc[0]-1)/1)
@@ -56,13 +56,10 @@ for i, (start, end) in enumerate(date_ranges):
     portfolio_perf = np.prod(1+weighted_returns)-1
     portfolio_perf_per_period.append(portfolio_perf)
 
-    st.write(portfolio_perf)
     # Récupérer les rendements du benchmark
-    sp500_data = fetch_data("^GSPC", start, end)["Adj Close"].pct_change().dropna()
-    st.write(sp500_data)
+    sp500_data = fetch_data("^SP500TR", start, end)["Adj Close"].pct_change().dropna()
     sp500_returns.append(sp500_data)
     sp500_perf = np.prod(1 + sp500_data) - 1
-    st.write(sp500_perf)
     bench_perf_per_period.append(sp500_perf[0])
 
 
@@ -153,7 +150,7 @@ st.pyplot(fig)
 st.subheader("Histogramme des Rendements Journaliers du portefeuille")
 fig, ax = plt.subplots()
 portfolio.hist(ax=ax, bins=20, color="blue", alpha=0.7)
-plt.axvline(var_95, color='red', linestyle='--', label=f'VaR (95%): {var_95:.2%}')
+plt.axvline(float(var_95), color='red', linestyle='--', label=f'VaR (95%): {var_95:.2%}')
 ax.set_title("Distribution des rendements journaliers")
 ax.set_xlabel("Rendements journaliers")
 ax.set_ylabel("Fréquence")
