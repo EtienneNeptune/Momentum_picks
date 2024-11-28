@@ -81,7 +81,7 @@ volatility = portfolio.std() * np.sqrt(252)
 bench_mean_return = benchmark.mean() * 252
 bench_volatility = benchmark.std() * np.sqrt(252)
 
-st.write(mean_return, bench_mean_return)
+st.write(mean_return, bench_mean_return[0])
 
 # Ratio de Sharpe
 sharpe_ratio = mean_return / volatility
