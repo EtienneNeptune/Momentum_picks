@@ -81,8 +81,6 @@ volatility = portfolio.std() * np.sqrt(252)
 bench_mean_return = benchmark.mean() * 252
 bench_volatility = benchmark.std() * np.sqrt(252)
 
-st.write(mean_return, bench_mean_return[0])
-
 # Ratio de Sharpe
 sharpe_ratio = mean_return / volatility
 bench_sharpe_ratio = bench_mean_return / bench_volatility
@@ -124,13 +122,13 @@ st.write(f"Drawdown maximal : {max_drawdown:.2%}")
 st.write(f"Bêta : {beta:.2f}")
 
 st.subheader("Analyse des résultats du benchmark")
-#st.write(f"Rendement annuel moyen : {bench_mean_return:.2%}")
-st.write(f"Volatilité annuelle : {bench_volatility:.2%}")
-st.write(f"Ratio de Sharpe : {bench_sharpe_ratio:.2f}")
-st.write(f"DAILY Value at Risk (95 %), historical : {bench_var_95:.2%}")
-st.write(f"DAILY Value at Risk (95 %), parametric: {bench_daily_parametric_VaR:.2%}")
-st.write(f"MONTHLY Value at Risk (95 %), parametric: {bench_monthly_parametric_VaR:.2%}")
-st.write(f"Drawdown maximal : {bench_max_drawdown:.2%}")
+st.write(f"Rendement annuel moyen : {bench_mean_return[0]:.2%}")
+st.write(f"Volatilité annuelle : {bench_volatility[0]:.2%}")
+st.write(f"Ratio de Sharpe : {bench_sharpe_ratio[0]:.2f}")
+st.write(f"DAILY Value at Risk (95 %), historical : {bench_var_95[0]:.2%}")
+st.write(f"DAILY Value at Risk (95 %), parametric: {bench_daily_parametric_VaR[0]:.2%}")
+st.write(f"MONTHLY Value at Risk (95 %), parametric: {bench_monthly_parametric_VaR[0]:.2%}")
+st.write(f"Drawdown maximal : {bench_max_drawdown[0]:.2%}")
 st.write(f"Bêta : "+str(1))
 
 
