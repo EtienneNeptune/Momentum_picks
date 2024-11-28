@@ -122,7 +122,7 @@ st.write(f"Drawdown maximal : {max_drawdown:.2%}")
 st.write(f"Bêta : {beta:.2f}")
 
 st.subheader("Analyse des résultats du benchmark")
-st.write(f"Rendement annuel moyen : {bench_mean_return:.2%}")
+#st.write(f"Rendement annuel moyen : {bench_mean_return:.2%}")
 st.write(f"Volatilité annuelle : {bench_volatility:.2%}")
 st.write(f"Ratio de Sharpe : {bench_sharpe_ratio:.2f}")
 st.write(f"DAILY Value at Risk (95 %), historical : {bench_var_95:.2%}")
