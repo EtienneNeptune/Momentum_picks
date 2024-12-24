@@ -2,7 +2,8 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import plotly.express as px
 from scipy.stats import norm
 
 st.title("Momentum Picks")
@@ -29,8 +30,38 @@ for i in range(int(num_ranges)):
 
 # Fonction pour récupérer les données
 @st.cache_data
-def fetch_data(tickers, start, end):
-    return yf.download(tickers, start=start, end=end)
+def fetch_data(tickers, start, end, adj_close=True):
+    # Download the data
+    data = yf.download(tickers, start=start, end=end)
+
+    # Select the appropriate price column
+    if adj_close:
+        data = data['Adj Close']
+    else:
+        data = data['Close']
+
+    data = data.dropna()
+
+    # Check and convert to USD if needed
+    for ticker in tickers:
+        stock_info = yf.Ticker(ticker).info
+        currency = stock_info.get('currency', 'USD')  # Default to 'USD' if currency not found
+
+        if currency != 'USD':
+            # Fetch the exchange rate data (FX: Currency/USD)
+            fx_ticker = f"{currency}=X"
+
+            st.write(ticker, fx_ticker)
+
+            fx_data = yf.download(fx_ticker, start=start, end=end)['Adj Close']
+
+            # Interpolate missing FX data to align with stock data
+            fx_data = fx_data.reindex(data.index).ffill()
+
+            # Convert the stock prices to USD
+            data[ticker] = data[ticker] / fx_data.iloc[:, 0]
+
+    return data
 
 portfolio_returns = []
 portfolio_perf_per_period = []
@@ -41,10 +72,7 @@ for i, (start, end) in enumerate(date_ranges):
     if not tickers[i]:
         continue
     # Récupérer les données pour les tickers et calculer les rendements pondérés
-    datas = fetch_data(tickers[i], start, end)
-    stocks = pd.concat([datas["Adj Close"]])
-    # stocks.index = pd.to_datetime(stocks.index)
-    returns = stocks.pct_change().dropna()
+    returns = fetch_data(tickers[i], start, end).pct_change().dropna()
     #weighted_returns = (returns * weights[i]).sum(axis=1) if daily rebalanced
     cumulative_values = (1 + returns).cumprod()
     st.write((1-cumulative_values)*100)
@@ -57,7 +85,7 @@ for i, (start, end) in enumerate(date_ranges):
     portfolio_perf_per_period.append(portfolio_perf)
 
     # Récupérer les rendements du benchmark
-    sp500_data = fetch_data("^SP500TR", start, end)["Adj Close"].pct_change().dropna()
+    sp500_data = fetch_data("^SP500TR", start, end).pct_change().dropna()
     sp500_returns.append(sp500_data)
     sp500_perf = np.prod(1 + sp500_data) - 1
     bench_perf_per_period.append(sp500_perf[0])
@@ -131,48 +159,93 @@ st.write(f"MONTHLY Value at Risk (95 %), parametric: {bench_monthly_parametric_V
 st.write(f"Drawdown maximal : {bench_max_drawdown[0]:.2%}")
 st.write(f"Bêta : "+str(1))
 
-
 # Graphique performance cumulée
 st.subheader("Performance du Portefeuille vs S&P500")
-fig, ax = plt.subplots()
-portfolio_cum.plot(ax=ax, label="Portefeuille", color="blue")
-benchmark_cum.plot(ax=ax, label="S&P500", color="orange")
-ax.legend()
-ax.set_title("Performance cumulée")
-ax.set_ylabel("Valeur cumulée")
-ax.grid()
-st.pyplot(fig)
+fig = go.Figure()
 
-# Graphique rendements mensuels
-st.subheader("Rendements Portefeuille")
+aligned_bench = benchmark_cum.reindex(portfolio_cum.index).iloc[:, 0]
+# Tracer les courbes du portefeuille et du benchmark
+fig.add_trace(go.Scatter(x=portfolio_cum.index, y=portfolio_cum.values, mode='lines', name="Portefeuille", line=dict(color='blue')))
+fig.add_trace(go.Scatter(x=aligned_bench.index, y=aligned_bench.values, mode='lines', name="S&P500", line=dict(color='red')))
+
+# Ajouter titre et labels
+fig.update_layout(
+    title="Performance cumulée",
+    xaxis_title="Date",
+    yaxis_title="Valeur cumulée",
+    template="plotly_dark"
+)
+
+# Affichage dans Streamlit
+st.plotly_chart(fig)
+
+# Graphique rendements mensuels (Portefeuille)
+st.subheader("Rendements trimestriels du portefeuille")
+fig = go.Figure()
+
+# Tracer les rendements mensuels
 labels = [f"{start} - {end}" for start, end in date_ranges]
-fig, ax = plt.subplots()
-plt.bar(labels, portfolio_perf_per_period, color='blue')
-ax.axhline(0, color="black", linewidth=0.8, linestyle="--")
-ax.set_title("Rendements sur les différentes périodes")
-ax.set_ylabel("Rendements")
-ax.grid(axis="y")
-plt.xticks(rotation=45, ha="right")
-st.pyplot(fig)
+fig.add_trace(go.Bar(
+    x=labels, y=portfolio_perf_per_period, marker=dict(color='blue'),
+    hovertemplate="Période: %{x}<br>Rendement: %{y:.2%}<extra></extra>"
+))
 
-# Graphique rendements mensuels
-st.subheader("Rendements Bench")
-labels = [f"{start} - {end}" for start, end in date_ranges]
-fig, ax = plt.subplots()
-plt.bar(labels, bench_perf_per_period, color='red')
-ax.axhline(0, color="black", linewidth=0.8, linestyle="--")
-ax.set_title("Rendements sur les différentes périodes")
-ax.set_ylabel("Rendements")
-ax.grid(axis="y")
-plt.xticks(rotation=45, ha="right")
-st.pyplot(fig)
+# Ajouter ligne pour zéro
+fig.add_trace(go.Scatter(x=labels, y=[0]*len(labels), mode='lines', line=dict(color='black', dash='dash'), name="Zero"))
 
-# Histogramme rendements journalier
+# Ajouter titre et labels
+fig.update_layout(
+    title="Rendements sur les différentes périodes",
+    xaxis_title="Périodes",
+    yaxis_title="Rendements",
+    template="plotly_dark",
+    xaxis_tickangle=-45
+)
+
+# Affichage dans Streamlit
+st.plotly_chart(fig)
+
+# Graphique rendements mensuels (Benchmark)
+st.subheader("Rendements trimestriels du benchmark")
+fig = go.Figure()
+
+# Tracer les rendements mensuels
+fig.add_trace(go.Bar(
+    x=labels, y=bench_perf_per_period, marker=dict(color='red'),
+    hovertemplate="Période: %{x}<br>Rendement: %{y:.2%}<extra></extra>"
+))
+
+# Ajouter ligne pour zéro
+fig.add_trace(go.Scatter(x=labels, y=[0]*len(labels), mode='lines', line=dict(color='black', dash='dash'), name="Zero"))
+
+# Ajouter titre et labels
+fig.update_layout(
+    title="Rendements sur les différentes périodes",
+    xaxis_title="Périodes",
+    yaxis_title="Rendements",
+    template="plotly_dark",
+    xaxis_tickangle=-45
+)
+
+# Affichage dans Streamlit
+st.plotly_chart(fig)
+
+# Histogramme des rendements journaliers (Portefeuille)
 st.subheader("Histogramme des Rendements Journaliers du portefeuille")
-fig, ax = plt.subplots()
-portfolio.hist(ax=ax, bins=20, color="blue", alpha=0.7)
-plt.axvline(float(var_95), color='red', linestyle='--', label=f'VaR (95%): {var_95:.2%}')
-ax.set_title("Distribution des rendements journaliers")
-ax.set_xlabel("Rendements journaliers")
-ax.set_ylabel("Fréquence")
-st.pyplot(fig)
+
+# Tracer l'histogramme
+fig = px.histogram(portfolio, nbins=20, color_discrete_sequence=['blue'])
+
+# Ajouter la VaR (Value at Risk)
+fig.add_vline(x=float(var_95), line=dict(color='red', dash='dash'), annotation_text=f"VaR (95%): {var_95:.2%}", annotation_position="top right")
+
+# Ajouter titre et labels
+fig.update_layout(
+    title="Distribution des rendements journaliers",
+    xaxis_title="Rendements journaliers",
+    yaxis_title="Fréquence",
+    template="plotly_dark"
+)
+
+# Affichage dans Streamlit
+st.plotly_chart(fig)
